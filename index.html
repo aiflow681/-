@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+    <meta charset="UTF-8">
+    <title>连连看</title>
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0,user-scalable=no">
+    <link rel="stylesheet" type="text/css" href="css/index.css">
+
+    </head>
+<body>
+    <script>
+    // 修复连连看游戏的所有问题（乱码、分享功能、字体、_czc错误）
+    // 不提前定义Game对象，避免覆盖原始构造函数
+    </script>
+    <script src="lib/hilo-standalone.js"></script>
+    <script src="js/link.min.js"></script>
+    <script>
+    (function() {
+        // 修复_czc未定义错误（百度统计变量）
+        window._czc = window._czc || [];
+        
+        // 确保页面使用UTF-8编码
+        if (!document.characterSet || document.characterSet.toLowerCase() !== 'utf-8') {
+            document.characterSet = 'UTF-8';
+        }
+        
+        // 在Game对象完全加载后修复其方法
+        setTimeout(function() {
+            if (window.Game) {
+                // 重写initShareBtn，直接禁用分享按钮初始化
+                Game.initShareBtn = function() {
+                    // 空函数，禁用分享按钮初始化
+                };
+                
+                // 修复setShareData方法，返回有效的分享数据结构
+                Game.setShareData = function(a, b) {
+                    this.shareData = {
+                        imgUrl: "",
+                        gamelink: "",
+                        tContent: "",
+                        tTitle: "",
+                        fContent: "",
+                        fTitle: ""
+                    };
+                    return this.shareData;
+                };
+                
+                // 修复weixinShare方法，不执行任何操作
+                Game.weixinShare = function() {
+                    // 空函数，禁用微信分享功能
+                };
+            }
+        }, 100);
+        
+        // 修复Hilo.Text构造函数，解决文本乱码问题
+        if (window.Hilo && window.Hilo.Text) {
+            var originalHiloText = window.Hilo.Text;
+            window.Hilo.Text = function(properties) {
+                if (properties && properties.text) {
+                    // 修复乱码文本
+                    var textMap = {
+                        // 加载资源
+                        "鍔犺浇璧勬簮涓�...": "加载资源中...",
+                        // 胜利文本
+                        "鍐嶇粰鐐瑰姏灏卞彲浠ラ€氬叧鍟︼紒": "再加把劲就能过关啦！",
+                        "钀岃悓鍝掞紝瓒呰禐锛岄€氬叧鍜紒": "连连看，超赞，过关啦！",
+                        "涓嶈绂诲紑澶箙鍝�": "不要离开太久哦",
+                        // 游戏分享文本
+                        "鏂扮増杩炶繛鐪嬶紝鐜╃殑涓嶆槸娓告垙锛岃€屾槸鏇剧粡鐨勫洖蹇嗭紒": "新版连连看，玩的不是游戏，而是流逝的回忆！",
+                        "鎴戝湪杩炶繛鐪嬪皬娓告垙鑾峰緱": "我在连连看小游戏获得",
+                        "涓嶆湇鏉ユ垬锛": "不服来战！",
+                        "鍗氶泤杩炶繛鐪": "趣味连连看",
+                        // 按钮和事件文本
+                        "鐐瑰嚮": "点击",
+                        "鍒嗕韩缁欐湅鍙": "分享给好友",
+                        "鍒嗕韩鍒版湅鍙嬪湀": "分享到朋友圈",
+                        "鍒嗕韩閬僵灞": "分享遮罩层",
+                        "涓婚〉鎸夐挳": "首页按钮",
+                        "涓婁竴椤垫寜閽": "上一页按钮",
+                        "涓嬩竴椤垫寜閽": "下一页按钮",
+                        "閫夋嫨鍏冲崱": "选择关卡",
+                        "缁撴潫-寮€濮嬫父鎴忔寜閽": "结束-开始游戏按钮",
+                        "鏆傚仠-缁х画娓告垙鎸夐挳": "暂停-继续游戏按钮",
+                        "涓嬩竴鍏虫寜閽": "下一关按钮",
+                        "寮€濮嬫父鎴忔寜閽": "开始游戏按钮",
+                        "鍏冲崱閫夋嫨鎸夐挳": "关卡选择按钮",
+                        "娓告垙鏆傚仠鎸夐挳": "游戏暂停按钮",
+                        "杩斿洖閫夋嫨鎸夐挳": "返回选择按钮",
+                        "鐐稿脊鎸夐挳": "炸弹按钮"
+                    };
+                    
+                    // 检查并替换乱码文本
+                    if (textMap[properties.text]) {
+                        properties.text = textMap[properties.text];
+                    } else if (Array.isArray(properties.text)) {
+                        // 如果是文本数组，逐个检查替换
+                        for (var i = 0; i < properties.text.length; i++) {
+                            if (textMap[properties.text[i]]) {
+                                properties.text[i] = textMap[properties.text[i]];
+                            }
+                        }
+                    }
+                }
+                return new originalHiloText(properties);
+            };
+            // 复制原型方法
+            window.Hilo.Text.prototype = originalHiloText.prototype;
+            window.Hilo.Text.prototype.constructor = window.Hilo.Text;
+        }
+        
+        // 防止访问分享元素导致错误
+        var originalGetElementById = document.getElementById;
+        document.getElementById = function(id) {
+            // 如果请求分享元素，返回一个安全的空对象
+            if (id === 'share') {
+                return {
+                    style: {
+                        display: 'none'
+                    },
+                    addEventListener: function() {},
+                    removeEventListener: function() {}
+                };
+            }
+            // 其他元素正常返回
+            return originalGetElementById.call(document, id);
+        };
+        
+        // 等待Game对象完全加载后再修改GameoverScene的initBtn方法
+        setTimeout(function() {
+            // 确保Game和GameoverScene已定义且是构造函数
+            if (window.Game && window.Game.GameoverScene && typeof window.Game.GameoverScene === 'function' && window.Game.GameoverScene.prototype) {
+                var sceneClass = window.Game.GameoverScene;
+                var originalInitBtn = sceneClass.prototype.initBtn;
+                
+                // 确保originalInitBtn是函数
+                if (typeof originalInitBtn === 'function') {
+                    sceneClass.prototype.initBtn = function() {
+                        // 调用原始方法初始化所有按钮
+                        originalInitBtn.call(this);
+                        
+                        // 移除分享按钮功能
+                        if (this.shareBtn) {
+                            this.shareBtn.off && this.shareBtn.off(Hilo.event.POINTER_END);
+                            this.shareBtn.visible = false;
+                        }
+                        
+                        // 确保再试试按钮正常工作
+                        if (this.againBtn) {
+                            // 重新添加事件监听器，确保可以正常点击
+                            this.againBtn.off && this.againBtn.off(Hilo.event.POINTER_END);
+                            this.againBtn.on && this.againBtn.on(Hilo.event.POINTER_END, function(d) {
+                                d && (d._stopped = true);
+                                var gameScene = window.Game;
+                                var stage = gameScene.stage;
+                                
+                                // 清理场景
+                                stage && stage.removeChild(this);
+                                gameScene.gameoverScene = null;
+                                gameScene.setShareData(1);
+                                
+                                // 移除当前图形场景
+                                if (gameScene.graphScene) {
+                                    stage && stage.removeChild(gameScene.graphScene);
+                                }
+                                
+                                // 重新创建开始场景
+                                gameScene.creatStartScene && gameScene.creatStartScene(user.currentLevel);
+                            }.bind(this));
+                        }
+                    };
+                }
+            }
+        }, 500);
+    })();
+    </script>
+<div id="bg" style="position: absolute; background-image: url('img/bg.jpg'); background-size: cover; width: 100%; height: 100%; background-position: initial initial; background-repeat: no-repeat no-repeat;"></div><canvas width="640" height="960" style="position: absolute; width: 444px; height: 666px;"></canvas>
+</body>
+
+</html>
